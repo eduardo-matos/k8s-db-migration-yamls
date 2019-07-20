@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dummy-app
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: dummy-app
+  template:
+    metadata:
+      labels:
+        app: dummy-app
+    spec:
+      initContainers:
+      - name: db-migrate
+        image: ematos/k8s-db-migration:1.0
+        command: ['python', 'manage.py', 'migrate']
+        env:
+        - name: APP_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: dummy-secret
+              key: secret.key
+        - name: APP_DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.host
+        - name: APP_DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.user
+        - name:  APP_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name:  dummy-db-mysql
+              key:  mysql-password
+        - name: APP_DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.name
+        - name: APP_DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.port
+      containers:
+      - name: dummy
+        image: ematos/k8s-db-migration:1.0
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          periodSeconds: 7
+          initialDelaySeconds: 5
+        env:
+        - name: APP_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: dummy-secret
+              key: secret.key
+        - name: APP_DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.host
+        - name: APP_DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.user
+        - name: APP_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: dummy-db-mysql
+              key: mysql-password
+        - name: APP_DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.name
+        - name: APP_DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.port
+        ports:
+        - containerPort: 8000

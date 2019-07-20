@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: database-configmap
+data:
+  db.name: dummy_database
+  db.user: dummy_user
+  db.host: dummy-db-mysql
+  db.port: "3306"

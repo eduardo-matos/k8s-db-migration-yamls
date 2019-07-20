@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dummy-db-migration-job
+spec:
+  template:
+    metadata:
+      name: dummy-db-migration-job
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: dummy
+        image: ematos/k8s-db-migration:latest
+        command:
+        - python
+        - manage.py
+        - migrate
+        - $(MIGRATION_APP_LABEL)
+        - $(MIGRATION_VERSION)
+        env:
+        - name: MIGRATION_APP_LABEL
+          value: core
+        - name: MIGRATION_VERSION
+          value: 0001_initial
+        - name: APP_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name:  dummy-secret
+              key:  secret.key
+        - name: APP_DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.host
+        - name: APP_DB_USER
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.user
+        - name:  APP_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name:  dummy-db-mysql
+              key:  mysql-password
+        - name: APP_DB_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.name
+        - name: APP_DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: database-configmap
+              key: db.port
